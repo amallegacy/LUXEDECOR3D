@@ -805,6 +805,25 @@
         <button class="drawer-close-btn" onclick="toggleControlDrawer(false)">✕</button>
       </div>
 
+      <!-- Tambah Ruang Baru (Modular Space Expansions) -->
+      <div>
+        <span class="studio-title">➕ Tambah / Kembang Ruang</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+          <button class="dock-btn" onclick="addNewRoomZone('dining_kitchen')" style="justify-content: flex-start;">
+            <span>🍳</span> Ruang Dapur & Island Bar
+          </button>
+          <button class="dock-btn" onclick="addNewRoomZone('study_nook')" style="justify-content: flex-start;">
+            <span>💼</span> Sudut Pejabat & Kerja Mezanin
+          </button>
+          <button class="dock-btn" onclick="addNewRoomZone('zen_garden')" style="justify-content: flex-start;">
+            <span>🎍</span> Taman Zen & Patio Santai
+          </button>
+          <button class="dock-btn" onclick="addNewRoomZone('walk_in_closet')" style="justify-content: flex-start;">
+            <span>👔</span> Almari Pakaian (Walk-in Closet)
+          </button>
+        </div>
+      </div>
+
       <div>
         <span class="studio-title">Augmented Reality</span>
         <button class="dock-btn" id="btn-toggle-ar" onclick="toggleARMode()" style="width: 100%; justify-content: center; margin-top: 4px; background: #10b981; color: #fff;">
@@ -901,6 +920,14 @@
           <span class="decor-icon">🪴</span>
           <span class="decor-name">Trio Pokok Pasu Putih</span>
         </button>
+        <button class="decor-btn" onclick="spawnFurniture('japandi_bed')">
+          <span class="decor-icon">🛏️</span>
+          <span class="decor-name">Katil Platform Japandi</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('toilet_suite')">
+          <span class="decor-icon">🚽</span>
+          <span class="decor-name">Tandas & Vanity Moden</span>
+        </button>
       </div>
     </aside>
 
@@ -928,7 +955,10 @@
     <!-- Floating Dock Trigger Utama -->
     <div class="glass-card floating-hud-dock interactive-element">
       <button class="dock-pill-btn" onclick="toggleControlDrawer()">
-        ⚙️ Tetapan
+        ⚙️ Tetapan & Ruang
+      </button>
+      <button class="dock-pill-btn" onclick="promptCustomRoomModal()" style="background: #faf4ed; border-color: var(--brand-accent);">
+        ➕ Tambah Ruang
       </button>
       <button class="dock-pill-btn primary" onclick="toggleCatalogDrawer()">
         🛋️ Tambah Perabot
@@ -1307,70 +1337,80 @@
       const herringboneTex = generateHerringboneTexture();
       const whiteBrickTex = generateWhiteBrickTexture();
 
-      // Shadow Ground
+      // Tapak Luaran (Ground Shadow Receiver)
       const groundPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(60, 60),
-        new THREE.ShadowMaterial({ opacity: 0.16 })
+        new THREE.ShadowMaterial({ opacity: 0.18 })
       );
       groundPlane.rotation.x = -Math.PI / 2;
       groundPlane.position.y = -0.3;
       groundPlane.receiveShadow = true;
       scene.add(groundPlane);
 
-      // Tingkat Bawah
+      // ==========================================
+      // 1. TINGKAT BAWAH (GROUND FLOOR & WALLS)
+      // ==========================================
       const groundWidth = 14;
       const groundDepth = 10;
       const slabMat = new THREE.MeshStandardMaterial({ color: 0xfdfbf7, roughness: 0.35 });
 
+      // Slab Tapak Lantai Bawah
       const groundBaseSlab = new THREE.Mesh(new THREE.BoxGeometry(groundWidth + 0.3, 0.35, groundDepth + 0.3), slabMat);
       groundBaseSlab.position.set(0, -0.175, 0);
       groundBaseSlab.receiveShadow = true;
       groundBaseSlab.castShadow = true;
       houseGroup.add(groundBaseSlab);
 
-      const parquetMat = new THREE.MeshStandardMaterial({ map: herringboneTex, roughness: 0.4, metalness: 0.05 });
+      // Lantai Parket Tingkat Bawah
+      const parquetMat = new THREE.MeshStandardMaterial({
+        map: herringboneTex,
+        roughness: 0.4,
+        metalness: 0.05
+      });
       floorMaterials.push(parquetMat);
 
       floorMeshGround = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, 0.05, groundDepth), parquetMat);
       floorMeshGround.position.set(0, 0.025, 0);
       floorMeshGround.receiveShadow = true;
+      floorMeshGround.isFloor = true;
       houseGroup.add(floorMeshGround);
 
       // Karpet Tingkat Bawah
-      const rugMat = new THREE.MeshStandardMaterial({ color: 0xc8b69f, roughness: 0.9 });
-      const rugRight = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.02, 4.4), rugMat);
+      const rugCreamMat = new THREE.MeshStandardMaterial({ color: 0xc8b69f, roughness: 0.9 });
+      const rugRight = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.02, 4.4), rugCreamMat);
       rugRight.position.set(3.8, 0.05, 1.8);
       rugRight.receiveShadow = true;
       houseGroup.add(rugRight);
 
-      const circleRug = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.02, 36), rugMat);
+      const circleRug = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.02, 36), rugCreamMat);
       circleRug.position.set(-1.8, 0.05, 1.4);
       circleRug.receiveShadow = true;
       houseGroup.add(circleRug);
 
-      // Dinding Belakang & Sisi
-      const wallMat = new THREE.MeshStandardMaterial({
+      // Dinding Bata Belakang
+      const wallHeight = 5.2;
+      const brickWallMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color(APP_STATE.currentWallColor),
         map: whiteBrickTex,
         roughness: 0.75,
         bumpScale: 0.04
       });
-      wallMaterials.push(wallMat);
+      wallMaterials.push(brickWallMat);
 
-      const wallHeight = 5.2;
-      const backWall = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, wallHeight, 0.35), wallMat);
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, wallHeight, 0.35), brickWallMat);
       backWall.position.set(0, wallHeight / 2, -groundDepth / 2);
       backWall.castShadow = true;
       backWall.receiveShadow = true;
       houseGroup.add(backWall);
 
-      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, wallHeight, 4.8), wallMat);
+      // Dinding Potongan Sisi Kanan
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, wallHeight, 4.8), brickWallMat);
       rightWall.position.set(groundWidth / 2, wallHeight / 2, -2.6);
       rightWall.castShadow = true;
       rightWall.receiveShadow = true;
       houseGroup.add(rightWall);
 
-      // Tingkap Kanan
+      // Tingkap Dinding Kanan
       const winFrameMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4 });
       const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.8, 1.4), winFrameMat);
       winFrame.position.set(groundWidth / 2, 2.8, -2.6);
@@ -1380,25 +1420,22 @@
       winGlass.position.set(groundWidth / 2, 2.8, -2.6);
       houseGroup.add(winGlass);
 
-      // Pintu Kaca Gelangsar
-      const glassDoorMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, transmission: 0.9 });
+      // Pintu Gelangsar Kaca Balkoni Bawah
+      const glassDoorMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, roughness: 0.05, transmission: 0.9 });
       const slideDoor = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.2, 4.6), glassDoorMat);
       slideDoor.position.set(-2.8, 2.1, -0.8);
       houseGroup.add(slideDoor);
 
-      // Langsir Sisi
-      const curtainMat = new THREE.MeshStandardMaterial({ color: 0xede4d8, roughness: 0.8 });
-      const curtain1 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.4, 16), curtainMat);
-      curtain1.position.set(-2.6, 2.2, -3.2);
-      curtain1.castShadow = true;
-      houseGroup.add(curtain1);
+      // Tiang Utama
+      const mainPillar = new THREE.Mesh(new THREE.BoxGeometry(0.7, wallHeight, 0.7), slabMat);
+      mainPillar.position.set(-2.8, wallHeight / 2, 2.2);
+      mainPillar.castShadow = true;
+      mainPillar.receiveShadow = true;
+      houseGroup.add(mainPillar);
 
-      const curtain2 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.4, 16), curtainMat);
-      curtain2.position.set(-2.6, 2.2, 1.6);
-      curtain2.castShadow = true;
-      houseGroup.add(curtain2);
-
-      // Tingkat Atas (Mezanin / Balkoni)
+      // ==========================================
+      // 2. TINGKAT ATAS (MEZZANINE SLAB & FLOOR)
+      // ==========================================
       const upperW = 8.5;
       const upperD = 6.2;
       const upperY = wallHeight;
@@ -1412,15 +1449,104 @@
       floorMeshUpper = new THREE.Mesh(new THREE.BoxGeometry(upperW - 0.2, 0.05, upperD - 0.2), parquetMat);
       floorMeshUpper.position.set(-2.65, upperY + 0.2, -1.8);
       floorMeshUpper.receiveShadow = true;
+      floorMeshUpper.isFloor = true;
       houseGroup.add(floorMeshUpper);
 
-      // Pagar Jeriji Kayu
-      buildWoodenRailing(-2.65, upperY + 0.2, 1.2, upperW, 'x');
+      // Pagar Jeriji Kayu (Ditinggalkan ruang bukaan di x = 1.3 untuk pendaratan anak tangga)
+      buildWoodenRailing(-3.65, upperY + 0.2, 1.2, upperW - 2.0, 'x');
       buildWoodenRailing(-6.8, upperY + 0.2, -1.8, upperD, 'z');
+
+      // ==========================================
+      // 3. TANGGA ESTETIK JAPANDI (FLOATING WOODEN STAIRCASE KE TINGKAT ATAS)
+      // ==========================================
+      buildJapandiStaircase();
+
+      // ==========================================
+      // 4. RUANG TANDAS & BILIK TIDUR
+      // ==========================================
+      buildBedAndBathArchitecture(upperY);
 
       // Lampu Sconce Dinding
       addWallSconce(1.2, 3.8, -4.75);
       addWallSconce(4.8, 3.8, -4.75);
+    }
+
+    /* Fungsi Membina Tangga Kayu Japandi dengan Pemegang Besi Ramping */
+    function buildJapandiStaircase() {
+      const stepCount = 14;
+      const startX = 2.4;
+      const startZ = 2.4;
+      const startY = 0.05;
+      const targetY = 5.2; // Aras lantai atas
+      const targetZ = -0.8;
+      const stepWidth = 1.25;
+      const stepDepth = 0.32;
+      const stepHeight = (targetY - startY) / stepCount;
+      const deltaZ = (targetZ - startZ) / stepCount;
+
+      const treadMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4 });
+      const stringerMat = new THREE.MeshStandardMaterial({ color: 0x3f2e21, roughness: 0.5 });
+
+      // Balak sokongan tengah bawah tangga (Central stringer)
+      const stringerLength = Math.sqrt(Math.pow(targetY - startY, 2) + Math.pow(targetZ - startZ, 2));
+      const stringerBeam = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, stringerLength), stringerMat);
+      stringerBeam.position.set(startX, (startY + targetY) / 2, (startZ + targetZ) / 2);
+      stringerBeam.rotation.x = Math.atan2(targetY - startY, -(targetZ - startZ));
+      stringerBeam.castShadow = true;
+      houseGroup.add(stringerBeam);
+
+      // Anak-anak Tangga Terapung Kayu Japandi (Floating Wooden Treads - Bersih tanpa tiang besi tercacak)
+      for (let i = 0; i < stepCount; i++) {
+        const stepY = startY + (i + 1) * stepHeight;
+        const stepZ = startZ + i * deltaZ;
+
+        const tread = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.07, stepDepth), treadMat);
+        tread.position.set(startX, stepY, stepZ);
+        tread.castShadow = true;
+        tread.receiveShadow = true;
+        houseGroup.add(tread);
+      }
+    }
+
+    /* Fungsi Membina Dinding Pemisah Bilik Tidur & Tandas Minimalis */
+    function buildBedAndBathArchitecture(upperY) {
+      const partitionMat = new THREE.MeshStandardMaterial({
+        color: 0xf3eee6,
+        roughness: 0.6,
+        metalness: 0.02
+      });
+      const tileMat = new THREE.MeshStandardMaterial({
+        color: 0xf5f6f8,
+        roughness: 0.2,
+        metalness: 0.05
+      });
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.3,
+        roughness: 0.1,
+        transmission: 0.85
+      });
+
+      // 1. Bilik Tidur (Kawasan Mezanin Belakang): Panel Headboard & Dinding Pemisah
+      const bedroomWall = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.2, 2.8), partitionMat);
+      bedroomWall.position.set(-3.8, upperY + 1.25, -3.4);
+      bedroomWall.castShadow = true;
+      bedroomWall.receiveShadow = true;
+      houseGroup.add(bedroomWall);
+
+      // 2. Tandas / Ensuite Bathroom (Di sudut kanan mezanin)
+      // Lantai jubin kalis air bilik air
+      const bathFloor = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 2.2), tileMat);
+      bathFloor.position.set(-1.4, upperY + 0.22, -3.7);
+      bathFloor.receiveShadow = true;
+      houseGroup.add(bathFloor);
+
+      // Dinding cermin kaca pemisah tandas (Shower screen)
+      const glassScreen = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.0, 1.8), glassMat);
+      glassScreen.position.set(-0.2, upperY + 1.2, -3.7);
+      glassScreen.castShadow = true;
+      houseGroup.add(glassScreen);
     }
 
     function buildWoodenRailing(x, y, z, length, axis) {
@@ -1796,6 +1922,133 @@
           tPot.castShadow = true;
           group.add(tPot);
           break;
+
+        /* 🛏️ 16. SET KATIL PLATFORM JAPANDI DENGAN BANTAL & MEJA SISI */
+        case 'japandi_bed':
+          // Platform Kayu
+          const bedBase = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.25, 2.6), darkWoodMat);
+          bedBase.position.y = 0.125;
+          bedBase.castShadow = true;
+          group.add(bedBase);
+
+          // Tilam Lembut Putih / Linen
+          const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 2.3), linenCreamMat);
+          mattress.position.set(0, 0.42, 0.05);
+          mattress.castShadow = true;
+          group.add(mattress);
+
+          // Duvet / Selimut Tebal
+          const duvet = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.14, 1.5), new THREE.MeshStandardMaterial({ color: 0xc4b39b, roughness: 0.85 }));
+          duvet.position.set(0, 0.58, 0.45);
+          duvet.castShadow = true;
+          group.add(duvet);
+
+          // Headboard Kayu Minimalis
+          const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.9, 0.15), oakWoodMat);
+          headboard.position.set(0, 0.6, -1.2);
+          headboard.castShadow = true;
+          group.add(headboard);
+
+          // Bantal Berkembar
+          for (let b = -0.55; b <= 0.55; b += 1.1) {
+            const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.16, 0.45), linenCreamMat);
+            pillow.position.set(b, 0.65, -0.75);
+            pillow.rotation.x = -0.15;
+            pillow.castShadow = true;
+            group.add(pillow);
+          }
+
+          // Meja Sisi Katil (Nightstand) dengan Lampu Tidur
+          const nightstand = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.55), oakWoodMat);
+          nightstand.position.set(-1.55, 0.225, -0.85);
+          nightstand.castShadow = true;
+          group.add(nightstand);
+
+          const tableLamp = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.32, 16), ceramicWhiteMat);
+          tableLamp.position.set(-1.55, 0.61, -0.85);
+          group.add(tableLamp);
+          break;
+
+        /* 🚽 17. TANDAS & SET VANITY BILIK AIR */
+        case 'toilet_suite':
+          // Tandas Duduk Seramik Putih
+          const toiletBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.42, 20), ceramicWhiteMat);
+          toiletBowl.position.set(-0.55, 0.21, 0);
+          toiletBowl.castShadow = true;
+          group.add(toiletBowl);
+
+          const waterCistern = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.55, 0.25), ceramicWhiteMat);
+          waterCistern.position.set(-0.55, 0.52, -0.25);
+          waterCistern.castShadow = true;
+          group.add(waterCistern);
+
+          // Kabinet Vanity & Singki Cuci Tangan
+          const vanityBase = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.72, 0.45), oakWoodMat);
+          vanityBase.position.set(0.45, 0.36, -0.15);
+          vanityBase.castShadow = true;
+          group.add(vanityBase);
+
+          const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.16, 20), ceramicWhiteMat);
+          basin.position.set(0.45, 0.8, -0.15);
+          basin.castShadow = true;
+          group.add(basin);
+
+          // Cermin Muka Bulat
+          const mirrorGlass = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.32, 0.32, 0.03, 32),
+            new THREE.MeshStandardMaterial({ color: 0xefefef, roughness: 0.05, metalness: 0.9 })
+          );
+          mirrorGlass.rotation.x = Math.PI / 2;
+          mirrorGlass.position.set(0.45, 1.4, -0.32);
+          group.add(mirrorGlass);
+          break;
+
+        /* 🍳 18. ISLAND DAPUR & MEJA MAKAN MINIMALIS */
+        case 'kitchen_island':
+          const islandBase = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.95, 1.1), oakWoodMat);
+          islandBase.position.y = 0.475;
+          islandBase.castShadow = true;
+          group.add(islandBase);
+
+          const marbleTop = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.08, 1.2), new THREE.MeshStandardMaterial({
+            color: 0xf8f8fa,
+            map: generateMarbleTexture(),
+            roughness: 0.15
+          }));
+          marbleTop.position.y = 0.99;
+          marbleTop.castShadow = true;
+          group.add(marbleTop);
+
+          // Kerusi Bar Tinggi (Stools)
+          for (let s = -0.7; s <= 0.7; s += 0.7) {
+            const barStool = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.65, 16), darkWoodMat);
+            barStool.position.set(s, 0.325, 0.85);
+            barStool.castShadow = true;
+            group.add(barStool);
+          }
+          break;
+
+        /* 💼 19. MEJA KERJA EKSEKUTIF MEZANIN */
+        case 'study_desk':
+          const deskMat = new THREE.MeshStandardMaterial({ color: 0x3f2e21, roughness: 0.4 });
+          const deskTop = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.9), deskMat);
+          deskTop.position.y = 0.74;
+          deskTop.castShadow = true;
+          group.add(deskTop);
+
+          // Kaki Meja
+          for (let x = -0.8; x <= 0.8; x += 1.6) {
+            const deskLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.74, 0.8), deskMat);
+            deskLeg.position.set(x, 0.37, 0);
+            deskLeg.castShadow = true;
+            group.add(deskLeg);
+          }
+
+          // Komputer / Laptop & Lampu Meja
+          const laptop = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.03, 0.32), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 }));
+          laptop.position.set(0, 0.8, 0);
+          group.add(laptop);
+          break;
       }
 
       if (customPos) {
@@ -1837,11 +2090,98 @@
       spawnFurniture('fiddle_leaf_large', new THREE.Vector3(0.5, 0, 1.5), 0);
       spawnFurniture('monstera_cluster', new THREE.Vector3(-3.2, 0, -1.8), 0);
 
-      // Mezanin Atas
-      spawnFurniture('outdoor_bench', new THREE.Vector3(-1.6, 5.4, -4.1), 0);
-      spawnFurniture('tan_armchair', new THREE.Vector3(-5.2, 5.4, -1.6), Math.PI / 4);
-      spawnFurniture('monstera_cluster', new THREE.Vector3(-4.6, 5.4, -4.1), 0);
-      spawnFurniture('fiddle_leaf_large', new THREE.Vector3(-3.4, 5.4, -4.1), 0);
+      // --- TINGKAT ATAS (MEZANIN: BILIK TIDUR & TANDAS & BALKONI) ---
+      // 1. Bilik Tidur: Set Katil Platform Japandi di ruang bilik tidur mezanin
+      spawnFurniture('japandi_bed', new THREE.Vector3(-5.2, 5.4, -3.3), 0);
+      
+      // 2. Tandas: Set Mangkuk Tandas & Singki Vanity Moden
+      spawnFurniture('toilet_suite', new THREE.Vector3(-1.4, 5.4, -3.6), 0);
+
+      // 3. Ruang Balkoni Santai Atas
+      spawnFurniture('outdoor_bench', new THREE.Vector3(-3.4, 5.4, 0.2), 0);
+      spawnFurniture('tan_armchair', new THREE.Vector3(-5.8, 5.4, -0.6), Math.PI / 4);
+      spawnFurniture('monstera_cluster', new THREE.Vector3(-6.2, 5.4, 0.2), 0);
+      spawnFurniture('fiddle_leaf_large', new THREE.Vector3(-1.0, 5.4, 0.2), 0);
+    }
+
+    /* =========================================================
+       MODULAR ROOM EXPANSION SYSTEM (TAMBAH PILIHAN RUANG)
+       ========================================================= */
+    const CREATED_ROOMS = {};
+
+    function addNewRoomZone(zoneType) {
+      if (CREATED_ROOMS[zoneType]) {
+        showToast("Ruang ini sudah sedia ditambah! Menghalakan kamera...");
+        if (zoneType === 'study_nook') focusLevel('mezzanine');
+        else focusLevel('ground');
+        return;
+      }
+
+      const oakWoodMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.45 });
+      const whiteTileMat = new THREE.MeshStandardMaterial({ color: 0xf6f6f8, roughness: 0.25 });
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd8d4cb, roughness: 0.85 });
+
+      switch(zoneType) {
+        case 'dining_kitchen':
+          // 🍳 Perluasan Dapur Terbuka & Kaunter Makan (Tingkat Bawah Kanan)
+          const kitchenPodium = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.06, 3.6), whiteTileMat);
+          kitchenPodium.position.set(4.2, 0.03, -2.8);
+          kitchenPodium.receiveShadow = true;
+          houseGroup.add(kitchenPodium);
+
+          spawnFurniture('kitchen_island', new THREE.Vector3(4.2, 0.05, -2.6), 0);
+          CREATED_ROOMS[zoneType] = true;
+          showToast("✨ Ruang Dapur & Island Bar berjaya ditambah!");
+          focusLevel('ground');
+          break;
+
+        case 'study_nook':
+          // 💼 Sudut Pejabat & Meja Kerja di Mezanin Atas
+          spawnFurniture('study_desk', new THREE.Vector3(-4.0, 5.4, 0.0), 0);
+          spawnFurniture('boucle_chair', new THREE.Vector3(-4.0, 5.4, 0.9), Math.PI);
+          CREATED_ROOMS[zoneType] = true;
+          showToast("✨ Sudut Kerja Mezanin berjaya ditambah!");
+          focusLevel('mezzanine');
+          break;
+
+        case 'zen_garden':
+          // 🎍 Taman Zen & Patio Batuan (Tingkat Bawah Kiri Luaran)
+          const zenGravel = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.04, 3.2), stoneMat);
+          zenGravel.position.set(-5.0, 0.02, 2.6);
+          zenGravel.receiveShadow = true;
+          houseGroup.add(zenGravel);
+
+          // Stepping Stones Kayu
+          for(let s = -1.0; s <= 1.0; s += 0.8) {
+            const stepWood = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.03, 0.45), oakWoodMat);
+            stepWood.position.set(-5.0, 0.05, 2.6 + s);
+            houseGroup.add(stepWood);
+          }
+
+          spawnFurniture('fiddle_leaf_large', new THREE.Vector3(-5.8, 0, 3.2), 0);
+          spawnFurniture('monstera_cluster', new THREE.Vector3(-4.2, 0, 3.2), 0);
+          CREATED_ROOMS[zoneType] = true;
+          showToast("✨ Taman Zen & Patio Santai berjaya dibina!");
+          focusLevel('ground');
+          break;
+
+        case 'walk_in_closet':
+          // 👔 Ruang Almari Pakaian Tertutup Mezanin
+          spawnFurniture('open_bookshelf', new THREE.Vector3(-2.2, 5.4, -4.2), 0);
+          spawnFurniture('open_bookshelf', new THREE.Vector3(-0.4, 5.4, -4.2), 0);
+          CREATED_ROOMS[zoneType] = true;
+          showToast("✨ Ruang Almari Pakaian (Closet) berjaya ditambah!");
+          focusLevel('mezzanine');
+          break;
+      }
+
+      calculateAestheticScore();
+      toggleControlDrawer(false);
+    }
+
+    function promptCustomRoomModal() {
+      toggleControlDrawer(true);
+      showToast("Pilih jenis ruang yang ingin anda bina di panel sebelah kiri!");
     }
 
     /* =========================================================
