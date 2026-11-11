@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LUXE DECOR 3D | Studio Diorama Japandi Interaktif</title>
+  
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       REFINED JAPANDI PALETTE & SPATIAL GLASSMORPHISM
+       ========================================================= */
+    :root {
+      --bg-warm: #f4efe8;
+      --panel-bg: rgba(255, 255, 255, 0.88);
+      --panel-border: rgba(212, 163, 115, 0.28);
+      --brand-brown: #3f2e21;
+      --brand-accent: #a97142;
+      --brand-accent-hover: #87552b;
+      --brand-light: #faf7f2;
+      --radius-xl: 22px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow-soft: 0 12px 32px -4px rgba(40, 25, 15, 0.08), 0 4px 12px -2px rgba(40, 25, 15, 0.04);
+      --shadow-hover: 0 20px 40px -4px rgba(169, 113, 66, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 50% 35%, #faf8f5 0%, #e8dfd5 100%);
+      color: var(--brand-brown);
+    }
+
+    /* 3D WebGL Canvas Layer */
+    #webgl-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: grab;
+    }
+    #webgl-container:active {
+      cursor: grabbing;
+    }
+
+    /* HUD Overlay System */
+    .hud-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px 24px;
+    }
+
+    .interactive-element {
+      pointer-events: auto;
+    }
+
+    .glass-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid var(--panel-border);
+      box-shadow: var(--shadow-soft);
+      border-radius: var(--radius-lg);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Header Navigation */
+    header.top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #d4a373, #a97142);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(169, 113, 66, 0.3);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+      color: var(--brand-brown);
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      color: var(--brand-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    /* Studio Palet Bahan (Lantai & Cat) */
+    .material-studio-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      flex-wrap: wrap;
+    }
+
+    .studio-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .studio-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--brand-brown);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    .floor-pill-btn {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: #f7f3ec;
+      color: var(--brand-brown);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .floor-pill-btn:hover {
+      background: #eae2d5;
+      transform: translateY(-1px);
+    }
+
+    .floor-pill-btn.active {
+      background: var(--brand-accent);
+      color: #ffffff;
+      border-color: var(--brand-accent-hover);
+      box-shadow: 0 4px 10px rgba(169, 113, 66, 0.3);
+    }
+
+    .wall-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .wall-swatch:hover, .wall-swatch.active {
+      transform: scale(1.25);
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 10px rgba(169, 113, 66, 0.45);
+    }
+
+    /* Level Switcher Cluster */
+    .theme-space-cluster {
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .selector-btn {
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #f7f3ec;
+      color: #574433;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .selector-btn:hover {
+      background: #eae3d7;
+    }
+
+    .selector-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, #a97142 0%, #87552b 100%);
+      box-shadow: 0 4px 12px rgba(135, 85, 43, 0.3);
+      border-color: var(--brand-accent-hover);
+    }
+
+    /* Skor Harmoni UI */
+    .score-meter {
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score-circle {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--brand-accent);
+    }
+
+    .score-circle svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-circle circle {
+      fill: none;
+      stroke-width: 3.8;
+      stroke-linecap: round;
+    }
+
+    .score-circle circle.bg {
+      stroke: rgba(0, 0, 0, 0.08);
+    }
+
+    .score-circle circle.progress {
+      stroke: var(--brand-accent);
+      stroke-dasharray: 94.2;
+      stroke-dashoffset: 6;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .score-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .score-info span:first-child {
+      font-size: 0.65rem;
+      color: #786454;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .score-info span:last-child {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--brand-brown);
+    }
+
+    /* Side Drawers */
+    .catalog-bar, .control-drawer-left {
+      position: absolute;
+      top: 50%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      z-index: 30;
+      opacity: 0;
+      visibility: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, visibility 0.25s;
+    }
+
+    .catalog-bar {
+      right: 24px;
+      transform: translateY(-50%) translateX(110%);
+      width: 320px;
+    }
+
+    .catalog-bar.open {
+      transform: translateY(-50%) translateX(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .control-drawer-left {
+      left: 24px;
+      transform: translateY(-50%) translateX(-110%);
+      width: 290px;
+      gap: 12px;
+    }
+
+    .control-drawer-left.open {
+      transform: translateY(-50%) translateX(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .drawer-header h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 800;
+      color: var(--brand-brown);
+    }
+
+    .drawer-close-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: rgba(0,0,0,0.04);
+      color: var(--brand-brown);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .drawer-close-btn:hover {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #ef4444;
+    }
+
+    .furniture-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      overflow-y: auto;
+      padding-right: 4px;
+      max-height: 60vh;
+    }
+
+    .furniture-list::-webkit-scrollbar {
+      width: 5px;
+    }
+    .furniture-list::-webkit-scrollbar-thumb {
+      background: var(--brand-accent);
+      border-radius: 6px;
+    }
+
+    .decor-btn {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius-md);
+      padding: 12px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      color: var(--brand-brown);
+    }
+
+    .decor-btn:hover {
+      background: var(--brand-light);
+      border-color: var(--brand-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(169, 113, 66, 0.15);
+    }
+
+    .decor-icon {
+      font-size: 1.6rem;
+    }
+
+    .decor-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* Floating Dock Bawah */
+    .floating-hud-dock {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 40;
+      padding: 8px 14px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-soft);
+      white-space: nowrap;
+    }
+
+    .dock-pill-btn {
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #ffffff;
+      color: var(--brand-brown);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .dock-pill-btn:hover {
+      background: var(--brand-light);
+      border-color: var(--brand-accent);
+      transform: translateY(-2px);
+    }
+
+    .dock-pill-btn.primary {
+      background: linear-gradient(135deg, #a97142 0%, #87552b 100%);
+      color: #ffffff;
+      border-color: var(--brand-accent-hover);
+      box-shadow: 0 4px 14px rgba(135, 85, 43, 0.3);
+    }
+
+    .dock-btn {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: var(--brand-brown);
+      padding: 9px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .dock-btn:hover {
+      background: #f7f3ec;
+      border-color: var(--brand-accent);
+    }
+
+    .dock-btn.danger:hover {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #b91c1c;
+    }
+
+    /* Inspector Bar */
+    .inspector-panel {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease;
+      z-index: 35;
+      border: 1.5px solid var(--brand-accent);
+    }
+
+    .inspector-panel.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .inspector-label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--brand-brown);
+      white-space: nowrap;
+    }
+
+    .color-swatch-list {
+      display: flex;
+      gap: 8px;
+    }
+
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.2);
+    }
+
+    /* Zen Mode */
+    .zen-toggle-wrapper {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      z-index: 45;
+    }
+
+    body.zen-mode .hud-layer > *:not(.zen-toggle-wrapper) {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: scale(0.96);
+    }
+
+    /* Toast Pill */
+    .toast-pill {
+      position: fixed;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--brand-brown);
+      border: 1px solid var(--brand-accent);
+      color: #fffaf5;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+
+    .toast-pill.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Modal Help */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-box {
+      max-width: 480px;
+      width: 100%;
+      padding: 26px;
+      text-align: center;
+    }
+
+    .modal-box h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .modal-box p {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #574433;
+      margin-bottom: 18px;
+    }
+
+    .instructions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .inst-card {
+      background: #faf7f2;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .inst-card b {
+      color: var(--brand-accent);
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.8rem;
+    }
+
+    /* AR Video */
+    #ar-video-stream {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      display: none;
+    }
+
+    .ar-hud-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #ffffff;
+      border: 1.5px solid #22c55e;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #166534;
+    }
+
+    .ar-hud-badge.active {
+      display: flex;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    /* Media Queries Responsif */
+    @media (max-width: 900px) {
+      .hud-layer { padding: 12px; }
+      header.top-bar { justify-content: center; }
+      .catalog-bar, .control-drawer-left {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        top: auto;
+        bottom: 84px;
+        transform: translateY(120%);
+        max-height: 50vh;
+      }
+      .catalog-bar.open, .control-drawer-left.open {
+        transform: translateY(0);
+      }
+      .floating-hud-dock {
+        bottom: 14px;
+        max-width: 95vw;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AR Real Camera Video Background Stream -->
+  <video id="ar-video-stream" autoplay playsinline muted></video>
+
+  <!-- 3D WebGL Canvas Layer -->
+  <div id="webgl-container"></div>
+
+  <!-- HUD Interface -->
+  <div class="hud-layer">
+    <!-- Header Controls -->
+    <header class="top-bar">
+      <!-- App Brand -->
+      <div class="glass-card brand interactive-element">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">JAPANDI 2-STOREY</div>
+          <div class="brand-tag">Diorama Interaktif 3D</div>
+        </div>
+      </div>
+
+      <!-- AR Indicator -->
+      <div class="ar-hud-badge interactive-element" id="ar-badge">
+        <div class="pulse-dot"></div>
+        <span>MOD AR AKTIF: Passthrough Kamera Sebenar</span>
+      </div>
+
+      <!-- Studio Lantai & Cat -->
+      <div class="glass-card material-studio-bar interactive-element" id="material-studio-bar">
+        <div class="studio-group">
+          <span class="studio-title">🪵 Lantai:</span>
+          <button class="floor-pill-btn active" id="btn-floor-herringbone" onclick="changeFloorStyle('herringbone')">✨ Oak Parket</button>
+          <button class="floor-pill-btn" id="btn-floor-marble" onclick="changeFloorStyle('marble')">🏛️ Marmar Putih</button>
+          <button class="floor-pill-btn" id="btn-floor-microcement" onclick="changeFloorStyle('microcement')">◽ Mikro Simen</button>
+          <button class="floor-pill-btn" id="btn-floor-walnut" onclick="changeFloorStyle('walnut')">🌰 Walnut Gelap</button>
+          <button class="floor-pill-btn" id="btn-floor-terrazzo" onclick="changeFloorStyle('terrazzo')">🌸 Terrazzo</button>
+        </div>
+
+        <div style="width: 1px; height: 20px; background: rgba(0,0,0,0.1);"></div>
+
+        <div class="studio-group" id="wall-swatches-container">
+          <span class="studio-title">🎨 Cat:</span>
+          <div class="wall-swatch active" style="background: #f7f6f2;" title="White Brick" onclick="changeWallColorDirect('#f7f6f2', 'brick', this)"></div>
+          <div class="wall-swatch" style="background: #e8dccb;" title="Warm Linen" onclick="changeWallColorDirect('#e8dccb', 'limewash', this)"></div>
+          <div class="wall-swatch" style="background: #c3cfc4;" title="Sage Velvet" onclick="changeWallColorDirect('#c3cfc4', 'smooth', this)"></div>
+          <div class="wall-swatch" style="background: #deb89b;" title="Terracotta Rust" onclick="changeWallColorDirect('#deb89b', 'smooth', this)"></div>
+          <div class="wall-swatch" style="background: #474749;" title="Charcoal Mineral" onclick="changeWallColorDirect('#474749', 'brick', this)"></div>
+        </div>
+      </div>
+
+      <!-- Fokus Tingkat -->
+      <div class="glass-card theme-space-cluster interactive-element">
+        <button class="selector-btn active" id="btn-lvl-all" onclick="focusLevel('all')">🏛️ 2 Tingkat</button>
+        <button class="selector-btn" id="btn-lvl-ground" onclick="focusLevel('ground')">🛋️ Bawah</button>
+        <button class="selector-btn" id="btn-lvl-mezzanine" onclick="focusLevel('mezzanine')">🌿 Balkoni</button>
+      </div>
+
+      <!-- Skor Estetika -->
+      <div class="glass-card score-meter interactive-element">
+        <div class="score-circle">
+          <svg viewBox="0 0 36 36">
+            <circle class="bg" cx="18" cy="18" r="15"/>
+            <circle class="progress" id="score-ring" cx="18" cy="18" r="15"/>
+          </svg>
+          <span id="score-val">98</span>
+        </div>
+        <div class="score-info">
+          <span>Skor Estetika</span>
+          <span id="score-tag">Harmoni Japandi ✨</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Drawer Kiri: Tetapan & Pencahayaan -->
+    <aside class="glass-card control-drawer-left interactive-element" id="control-drawer">
+      <div class="drawer-header">
+        <h3>⚙️ Tetapan Studio</h3>
+        <button class="drawer-close-btn" onclick="toggleControlDrawer(false)">✕</button>
+      </div>
+
+      <div>
+        <span class="studio-title">Augmented Reality</span>
+        <button class="dock-btn" id="btn-toggle-ar" onclick="toggleARMode()" style="width: 100%; justify-content: center; margin-top: 4px; background: #10b981; color: #fff;">
+          🥽 Mod AR (Kamera Sebenar)
+        </button>
+      </div>
+
+      <div>
+        <span class="studio-title">Suasana Cahaya</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+          <button class="dock-btn" id="btn-light-day" onclick="toggleLighting('day')">☀️ Siang Cerah (Warm Day)</button>
+          <button class="dock-btn" id="btn-light-sunset" onclick="toggleLighting('sunset')">🌇 Senja Keemasan (Golden Sunset)</button>
+          <button class="dock-btn" id="btn-light-night" onclick="toggleLighting('night')">🌙 Malam Cozy (Romantic Night)</button>
+        </div>
+      </div>
+
+      <div>
+        <span class="studio-title">Pengurusan Ruang</span>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <button class="dock-btn" style="flex: 1; justify-content: center;" onclick="resetIsometricView()">🔄 Reset Sudut</button>
+          <button class="dock-btn danger" style="flex: 1; justify-content: center;" onclick="clearAllFurniture(true)">🗑️ Kosongkan</button>
+        </div>
+      </div>
+
+      <button class="dock-btn" style="background: var(--brand-accent); color: #fff; justify-content: center; margin-top: 6px;" onclick="toggleHelpModal(true)">
+        📖 Panduan Diorama
+      </button>
+    </aside>
+
+    <!-- Drawer Kanan: Katalog Perabot -->
+    <aside class="glass-card catalog-bar interactive-element" id="catalog-drawer">
+      <div class="drawer-header">
+        <h3>🛋️ Barangan Reka Bentuk</h3>
+        <button class="drawer-close-btn" onclick="toggleCatalogDrawer(false)">✕</button>
+      </div>
+      <div class="furniture-list">
+        <button class="decor-btn" onclick="spawnFurniture('tan_armchair')">
+          <span class="decor-icon">🪑</span>
+          <span class="decor-name">Kerusi Kulit Cognac</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('japandi_sofa')">
+          <span class="decor-icon">🛋️</span>
+          <span class="decor-name">Sofa Linen & Selimut</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('boucle_chair')">
+          <span class="decor-icon">🪑</span>
+          <span class="decor-name">Kerusi Bouclé Putih</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('marble_coffee_table')">
+          <span class="decor-icon">☕</span>
+          <span class="decor-name">Meja Kopi Marmar Fluted</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('wall_tv_unit')">
+          <span class="decor-icon">📺</span>
+          <span class="decor-name">TV Skrin & Rak Gantung</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('coffee_station')">
+          <span class="decor-icon">☕</span>
+          <span class="decor-name">Kabinet Bar Kopi</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('open_bookshelf')">
+          <span class="decor-icon">📚</span>
+          <span class="decor-name">Rak Buku Terbuka</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('tv_credenza')">
+          <span class="decor-icon">🪵</span>
+          <span class="decor-name">Konsol Rendah Kayu</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('arch_desk')">
+          <span class="decor-icon">🪑</span>
+          <span class="decor-name">Meja Melengkung Oak</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('arc_floor_lamp')">
+          <span class="decor-icon">🪄</span>
+          <span class="decor-name">Lampu Melengkung Matte</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('fiddle_leaf_large')">
+          <span class="decor-icon">🌴</span>
+          <span class="decor-name">Pokok Pasu Seramik</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('zz_plant_pot')">
+          <span class="decor-icon">🪴</span>
+          <span class="decor-name">Tanaman ZZ Tropikal</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('pendant_lamp')">
+          <span class="decor-icon">💡</span>
+          <span class="decor-name">Lampu Gantung Kubah</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('outdoor_bench')">
+          <span class="decor-icon">🪵</span>
+          <span class="decor-name">Bangku Balkoni Atas</span>
+        </button>
+        <button class="decor-btn" onclick="spawnFurniture('monstera_cluster')">
+          <span class="decor-icon">🪴</span>
+          <span class="decor-name">Trio Pokok Pasu Putih</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Panel Pengubahsuaian Perabot Dipilih (Inspector) -->
+    <div class="glass-card inspector-panel interactive-element" id="inspector-bar">
+      <span class="inspector-label" id="selected-item-title">Edit Perabot</span>
+      
+      <div class="color-swatch-list">
+        <div class="color-swatch" style="background: #a97142;" title="Cognac Tan" onclick="changeActiveColor('#a97142')"></div>
+        <div class="color-swatch" style="background: #dec7b0;" title="Linen Sand" onclick="changeActiveColor('#dec7b0')"></div>
+        <div class="color-swatch" style="background: #3f2e21;" title="Deep Walnut" onclick="changeActiveColor('#3f2e21')"></div>
+        <div class="color-swatch" style="background: #fdfbf7;" title="Warm White" onclick="changeActiveColor('#fdfbf7')"></div>
+        <div class="color-swatch" style="background: #52796f;" title="Muted Sage" onclick="changeActiveColor('#52796f')"></div>
+      </div>
+
+      <button class="dock-btn" onclick="rotateSelectedObject()">
+        🔄 Pusing 45°
+      </button>
+
+      <button class="dock-btn danger" onclick="deleteSelectedObject()">
+        🗑️ Padam
+      </button>
+    </div>
+
+    <!-- Floating Dock Trigger Utama -->
+    <div class="glass-card floating-hud-dock interactive-element">
+      <button class="dock-pill-btn" onclick="toggleControlDrawer()">
+        ⚙️ Tetapan
+      </button>
+      <button class="dock-pill-btn primary" onclick="toggleCatalogDrawer()">
+        🛋️ Tambah Perabot
+      </button>
+      <button class="dock-pill-btn" onclick="resetIsometricView()">
+        🔄 Reset Sudut
+      </button>
+    </div>
+
+    <!-- Mod Zen (Cinematic) -->
+    <div class="zen-toggle-wrapper interactive-element">
+      <button class="dock-pill-btn" onclick="toggleZenMode()" id="btn-zen" title="Mod Bersih / Sinematik">
+        <span id="zen-icon">👁️</span> <span id="zen-text">Mod Bersih</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notifikasi -->
+  <div class="toast-pill" id="toast">Memuatkan Studio Diorama...</div>
+
+  <!-- Modal Bantuan & Panduan -->
+  <div class="modal-backdrop" id="help-modal">
+    <div class="glass-card modal-box interactive-element">
+      <h2>PANDUAN STUDIO 3D</h2>
+      <p>Kawal dan gubah hiasan dalaman rumah 2 tingkat anda secara realistik!</p>
+      
+      <div class="instructions-grid">
+        <div class="inst-card">
+          <b>🏛️ 2 Tingkat Potongan</b>
+          Perhatikan aras bawah dan mezanin secara serentak dari pelbagai sudut.
+        </div>
+        <div class="inst-card">
+          <b>🖱️ Pusing & Zum 360°</b>
+          Klik & seret untuk putar kamera. Skrol atau cubit (*pinch*) untuk zum masuk/keluar.
+        </div>
+        <div class="inst-card">
+          <b>📦 Susun & Alih Objek</b>
+          Klik perabot untuk seret pada satah lantai, tukar warna balutan fabrik atau putar.
+        </div>
+        <div class="inst-card">
+          <b>🥽 Passthrough AR</b>
+          Tekan Mod AR untuk unjurkan studio ke lantai dunia sebenar menerusi kamera.
+        </div>
+      </div>
+
+      <button class="dock-btn" style="background: var(--brand-accent); color: #fff; width: 100%; justify-content: center; padding: 12px;" onclick="toggleHelpModal(false)">
+        Mula Meneroka ✨
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       GLOBAL APPLICATION STATE & RUNTIME
+       ========================================================= */
+    const APP_STATE = {
+      lightMode: 'day',
+      currentWallColor: '#f7f6f2',
+      currentWallFinish: 'brick',
+      currentFloorStyle: 'herringbone',
+      selectedObject: null,
+      furnitureList: [],
+      score: 98,
+      isARActive: false,
+      videoStream: null,
+      isZenMode: false
+    };
+
+    let scene, camera, renderer, controls;
+    let houseGroup, floorMeshGround, floorMeshUpper, wallMaterials = [], floorMaterials = [];
+    let ambientLight, directionalLight, fillLight, floorBounceLight;
+    let raycaster, mouse;
+    let isDragging = false;
+    let dragPlane;
+    let planeIntersector;
+    let arReticleGroup, arFloorGrid;
+
+    const TEXTURE_CACHE = {};
+
+    /* =========================================================
+       PROCEDURAL TEXTURE GENERATORS
+       ========================================================= */
+    function generateHerringboneTexture() {
+      if (TEXTURE_CACHE.herringbone) return TEXTURE_CACHE.herringbone;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#e8d7c3';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const w = 64;
+      const h = 128;
+      ctx.lineWidth = 1.5;
+
+      for (let y = -h; y < 1024 + h; y += h / 2) {
+        for (let x = -w; x < 1024 + w; x += w * 2) {
+          const shade = ((x + y) % 3 === 0) ? '#e2ceb9' : (((x + y) % 5 === 0) ? '#ecdccb' : '#dfc8b1');
+          ctx.fillStyle = shade;
+          ctx.strokeStyle = 'rgba(120, 90, 60, 0.25)';
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(0, 0, w, h);
+          ctx.strokeRect(0, 0, w, h);
+
+          ctx.fillStyle = 'rgba(100, 70, 40, 0.04)';
+          for (let k = 4; k < h; k += 16) {
+            ctx.fillRect(0, k, w, 2);
+          }
+          ctx.restore();
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      TEXTURE_CACHE.herringbone = tex;
+      return tex;
+    }
+
+    function generateWhiteBrickTexture() {
+      if (TEXTURE_CACHE.whiteBrick) return TEXTURE_CACHE.whiteBrick;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f5f3ee';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const brickH = 32;
+      const brickW = 72;
+      ctx.strokeStyle = 'rgba(180, 170, 155, 0.4)';
+      ctx.lineWidth = 2.2;
+
+      for (let y = 0; y < 1024; y += brickH) {
+        const offset = (y / brickH) % 2 === 0 ? 0 : brickW / 2;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1024, y);
+        ctx.stroke();
+
+        for (let x = -brickW + offset; x < 1024 + brickW; x += brickW) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y + brickH);
+          ctx.stroke();
+
+          if (Math.random() > 0.5) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.015)';
+            ctx.fillRect(x + 2, y + 2, brickW - 4, brickH - 4);
+          }
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 2);
+      TEXTURE_CACHE.whiteBrick = tex;
+      return tex;
+    }
+
+    function generateMarbleTexture() {
+      if (TEXTURE_CACHE.marble) return TEXTURE_CACHE.marble;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f9f9fb';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      ctx.strokeStyle = 'rgba(180, 185, 195, 0.35)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(100, 0);
+      ctx.bezierCurveTo(300, 400, 600, 500, 1024, 850);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(212, 163, 115, 0.4)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 300);
+      ctx.bezierCurveTo(450, 250, 550, 650, 1024, 400);
+      ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      TEXTURE_CACHE.marble = tex;
+      return tex;
+    }
+
+    function generateMicrocementTexture() {
+      if (TEXTURE_CACHE.microcement) return TEXTURE_CACHE.microcement;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#e4dfd8';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      for (let i = 0; i < 30000; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const g = Math.floor(Math.random() * 25);
+        ctx.fillStyle = `rgba(${g}, ${g}, ${g}, 0.035)`;
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      TEXTURE_CACHE.microcement = tex;
+      return tex;
+    }
+
+    function generateWalnutTexture() {
+      if (TEXTURE_CACHE.walnut) return TEXTURE_CACHE.walnut;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#443122';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const w = 64;
+      const h = 128;
+      ctx.lineWidth = 1.5;
+
+      for (let y = -h; y < 1024 + h; y += h / 2) {
+        for (let x = -w; x < 1024 + w; x += w * 2) {
+          const shade = ((x + y) % 3 === 0) ? '#38281b' : '#523a28';
+          ctx.fillStyle = shade;
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(0, 0, w, h);
+          ctx.strokeRect(0, 0, w, h);
+          ctx.restore();
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      TEXTURE_CACHE.walnut = tex;
+      return tex;
+    }
+
+    function generateTerrazzoTexture() {
+      if (TEXTURE_CACHE.terrazzo) return TEXTURE_CACHE.terrazzo;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f4f0eb';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      const colors = ['#d4a373', '#8a9a86', '#d98880', '#aed6f1', '#5d6d7e'];
+      for (let i = 0; i < 750; i++) {
+        ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+        ctx.beginPath();
+        const cx = Math.random() * 1024;
+        const cy = Math.random() * 1024;
+        const size = 3 + Math.random() * 7;
+        ctx.arc(cx, cy, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      TEXTURE_CACHE.terrazzo = tex;
+      return tex;
+    }
+
+    /* =========================================================
+       INITIALIZE THREE.JS SCENE
+       ========================================================= */
+    window.onload = function() {
+      initThreeScene();
+      buildDioramaArchitecture();
+      setupEventListeners();
+      populateReferenceFurniture();
+      animateLoop();
+      showToast("🏡 Studio Diorama Japandi sedia diteroka!");
+    };
+
+    function initThreeScene() {
+      const container = document.getElementById('webgl-container');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf2ede4);
+
+      camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+      camera.position.set(19, 17, 21);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.05;
+      controls.minDistance = 6;
+      controls.maxDistance = 45;
+      controls.target.set(0, 3.2, 0);
+
+      // Studio Lighting
+      ambientLight = new THREE.AmbientLight(0xfff8ee, 0.95);
+      scene.add(ambientLight);
+
+      directionalLight = new THREE.DirectionalLight(0xfffbf2, 1.85);
+      directionalLight.position.set(-16, 26, 18);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      directionalLight.shadow.camera.near = 0.5;
+      directionalLight.shadow.camera.far = 60;
+      directionalLight.shadow.bias = -0.0001;
+      directionalLight.shadow.normalBias = 0.02;
+      const d = 16;
+      directionalLight.shadow.camera.left = -d;
+      directionalLight.shadow.camera.right = d;
+      directionalLight.shadow.camera.top = d;
+      directionalLight.shadow.camera.bottom = -d;
+      scene.add(directionalLight);
+
+      fillLight = new THREE.DirectionalLight(0xffeed9, 0.6);
+      fillLight.position.set(18, 14, -14);
+      scene.add(fillLight);
+
+      floorBounceLight = new THREE.DirectionalLight(0xe8d7c3, 0.35);
+      floorBounceLight.position.set(0, -6, 0);
+      scene.add(floorBounceLight);
+
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+      dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      planeIntersector = new THREE.Vector3();
+
+      houseGroup = new THREE.Group();
+      scene.add(houseGroup);
+
+      buildARReticle();
+    }
+
+    /* =========================================================
+       BUILD ARCHITECTURE (2-STOREY CUTAWAY DIORAMA)
+       ========================================================= */
+    function buildDioramaArchitecture() {
+      while(houseGroup.children.length > 0) { 
+        houseGroup.remove(houseGroup.children[0]); 
+      }
+      wallMaterials = [];
+      floorMaterials = [];
+
+      const herringboneTex = generateHerringboneTexture();
+      const whiteBrickTex = generateWhiteBrickTexture();
+
+      // Shadow Ground
+      const groundPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(60, 60),
+        new THREE.ShadowMaterial({ opacity: 0.16 })
+      );
+      groundPlane.rotation.x = -Math.PI / 2;
+      groundPlane.position.y = -0.3;
+      groundPlane.receiveShadow = true;
+      scene.add(groundPlane);
+
+      // Tingkat Bawah
+      const groundWidth = 14;
+      const groundDepth = 10;
+      const slabMat = new THREE.MeshStandardMaterial({ color: 0xfdfbf7, roughness: 0.35 });
+
+      const groundBaseSlab = new THREE.Mesh(new THREE.BoxGeometry(groundWidth + 0.3, 0.35, groundDepth + 0.3), slabMat);
+      groundBaseSlab.position.set(0, -0.175, 0);
+      groundBaseSlab.receiveShadow = true;
+      groundBaseSlab.castShadow = true;
+      houseGroup.add(groundBaseSlab);
+
+      const parquetMat = new THREE.MeshStandardMaterial({ map: herringboneTex, roughness: 0.4, metalness: 0.05 });
+      floorMaterials.push(parquetMat);
+
+      floorMeshGround = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, 0.05, groundDepth), parquetMat);
+      floorMeshGround.position.set(0, 0.025, 0);
+      floorMeshGround.receiveShadow = true;
+      houseGroup.add(floorMeshGround);
+
+      // Karpet Tingkat Bawah
+      const rugMat = new THREE.MeshStandardMaterial({ color: 0xc8b69f, roughness: 0.9 });
+      const rugRight = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.02, 4.4), rugMat);
+      rugRight.position.set(3.8, 0.05, 1.8);
+      rugRight.receiveShadow = true;
+      houseGroup.add(rugRight);
+
+      const circleRug = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.02, 36), rugMat);
+      circleRug.position.set(-1.8, 0.05, 1.4);
+      circleRug.receiveShadow = true;
+      houseGroup.add(circleRug);
+
+      // Dinding Belakang & Sisi
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(APP_STATE.currentWallColor),
+        map: whiteBrickTex,
+        roughness: 0.75,
+        bumpScale: 0.04
+      });
+      wallMaterials.push(wallMat);
+
+      const wallHeight = 5.2;
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, wallHeight, 0.35), wallMat);
+      backWall.position.set(0, wallHeight / 2, -groundDepth / 2);
+      backWall.castShadow = true;
+      backWall.receiveShadow = true;
+      houseGroup.add(backWall);
+
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, wallHeight, 4.8), wallMat);
+      rightWall.position.set(groundWidth / 2, wallHeight / 2, -2.6);
+      rightWall.castShadow = true;
+      rightWall.receiveShadow = true;
+      houseGroup.add(rightWall);
+
+      // Tingkap Kanan
+      const winFrameMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4 });
+      const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.8, 1.4), winFrameMat);
+      winFrame.position.set(groundWidth / 2, 2.8, -2.6);
+      houseGroup.add(winFrame);
+
+      const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.6, 1.2), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
+      winGlass.position.set(groundWidth / 2, 2.8, -2.6);
+      houseGroup.add(winGlass);
+
+      // Pintu Kaca Gelangsar
+      const glassDoorMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, transmission: 0.9 });
+      const slideDoor = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.2, 4.6), glassDoorMat);
+      slideDoor.position.set(-2.8, 2.1, -0.8);
+      houseGroup.add(slideDoor);
+
+      // Langsir Sisi
+      const curtainMat = new THREE.MeshStandardMaterial({ color: 0xede4d8, roughness: 0.8 });
+      const curtain1 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.4, 16), curtainMat);
+      curtain1.position.set(-2.6, 2.2, -3.2);
+      curtain1.castShadow = true;
+      houseGroup.add(curtain1);
+
+      const curtain2 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.4, 16), curtainMat);
+      curtain2.position.set(-2.6, 2.2, 1.6);
+      curtain2.castShadow = true;
+      houseGroup.add(curtain2);
+
+      // Tingkat Atas (Mezanin / Balkoni)
+      const upperW = 8.5;
+      const upperD = 6.2;
+      const upperY = wallHeight;
+
+      const upperSlab = new THREE.Mesh(new THREE.BoxGeometry(upperW, 0.35, upperD), slabMat);
+      upperSlab.position.set(-2.65, upperY, -1.8);
+      upperSlab.castShadow = true;
+      upperSlab.receiveShadow = true;
+      houseGroup.add(upperSlab);
+
+      floorMeshUpper = new THREE.Mesh(new THREE.BoxGeometry(upperW - 0.2, 0.05, upperD - 0.2), parquetMat);
+      floorMeshUpper.position.set(-2.65, upperY + 0.2, -1.8);
+      floorMeshUpper.receiveShadow = true;
+      houseGroup.add(floorMeshUpper);
+
+      // Pagar Jeriji Kayu
+      buildWoodenRailing(-2.65, upperY + 0.2, 1.2, upperW, 'x');
+      buildWoodenRailing(-6.8, upperY + 0.2, -1.8, upperD, 'z');
+
+      // Lampu Sconce Dinding
+      addWallSconce(1.2, 3.8, -4.75);
+      addWallSconce(4.8, 3.8, -4.75);
+    }
+
+    function buildWoodenRailing(x, y, z, length, axis) {
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.45 });
+      const railH = 1.2;
+      const slatCount = Math.floor(length / 0.26);
+
+      const topGeo = (axis === 'x') ? new THREE.BoxGeometry(length, 0.08, 0.12) : new THREE.BoxGeometry(0.12, 0.08, length);
+      const topRail = new THREE.Mesh(topGeo, woodMat);
+      topRail.position.set(x, y + railH, z);
+      topRail.castShadow = true;
+      houseGroup.add(topRail);
+
+      const slatGeo = new THREE.BoxGeometry(0.06, railH, 0.06);
+      for (let i = 0; i <= slatCount; i++) {
+        const slat = new THREE.Mesh(slatGeo, woodMat);
+        const offset = -length / 2 + (i * (length / slatCount));
+        if (axis === 'x') slat.position.set(x + offset, y + railH / 2, z);
+        else slat.position.set(x, y + railH / 2, z + offset);
+        slat.castShadow = true;
+        houseGroup.add(slat);
+      }
+    }
+
+    function addWallSconce(x, y, z) {
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.16, 0.24, 16),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })
+      );
+      cone.position.set(x, y, z);
+      cone.rotation.x = Math.PI / 4;
+      cone.castShadow = true;
+      houseGroup.add(cone);
+
+      const glow = new THREE.PointLight(0xffecc7, 1.1, 4.5);
+      glow.position.set(x, y - 0.15, z + 0.2);
+      houseGroup.add(glow);
+    }
+
+    /* =========================================================
+       FLOOR & WALL MATERIAL CONTROLLERS
+       ========================================================= */
+    function changeFloorStyle(styleName) {
+      APP_STATE.currentFloorStyle = styleName;
+      document.querySelectorAll('.floor-pill-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-floor-${styleName}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      let targetTexture = null;
+      let roughness = 0.4;
+      let metalness = 0.05;
+
+      switch(styleName) {
+        case 'herringbone':
+          targetTexture = generateHerringboneTexture();
+          roughness = 0.4;
+          showToast("Lantai: Oak Herringbone 🪵");
+          break;
+        case 'marble':
+          targetTexture = generateMarbleTexture();
+          roughness = 0.1;
+          metalness = 0.15;
+          showToast("Lantai: Marmar Carrara 🏛️");
+          break;
+        case 'microcement':
+          targetTexture = generateMicrocementTexture();
+          roughness = 0.8;
+          metalness = 0.02;
+          showToast("Lantai: Semen Mikro Scandinavian ◽");
+          break;
+        case 'walnut':
+          targetTexture = generateWalnutTexture();
+          roughness = 0.38;
+          showToast("Lantai: Walnut Chevron Gelap 🌰");
+          break;
+        case 'terrazzo':
+          targetTexture = generateTerrazzoTexture();
+          roughness = 0.3;
+          showToast("Lantai: Terrazzo Pastel 🌸");
+          break;
+      }
+
+      floorMaterials.forEach(mat => {
+        mat.map = targetTexture;
+        mat.roughness = roughness;
+        mat.metalness = metalness;
+        mat.needsUpdate = true;
+      });
+      calculateAestheticScore();
+    }
+
+    function changeWallColorDirect(hexColor, finish, element) {
+      APP_STATE.currentWallColor = hexColor;
+      APP_STATE.currentWallFinish = finish;
+
+      const whiteBrickTex = generateWhiteBrickTexture();
+
+      wallMaterials.forEach(mat => {
+        mat.color.setStyle(hexColor);
+        if (finish === 'brick') {
+          mat.map = whiteBrickTex;
+          mat.roughness = 0.75;
+          mat.bumpScale = 0.04;
+        } else if (finish === 'limewash') {
+          mat.map = generateMicrocementTexture();
+          mat.roughness = 0.88;
+          mat.bumpScale = 0.02;
+        } else {
+          mat.map = null;
+          mat.roughness = 0.6;
+        }
+        mat.needsUpdate = true;
+      });
+
+      document.querySelectorAll('#wall-swatches-container .wall-swatch').forEach(sw => sw.classList.remove('active'));
+      if (element) element.classList.add('active');
+      showToast(`Cat Dinding: ${hexColor.toUpperCase()} ✨`);
+      calculateAestheticScore();
+    }
+
+    /* =========================================================
+       SPAWN FURNITURE OBJECTS
+       ========================================================= */
+    function spawnFurniture(type, customPos = null, customRot = 0) {
+      const group = new THREE.Group();
+      group.name = type;
+
+      const oakWoodMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4 });
+      const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.45 });
+      const leatherTanMat = new THREE.MeshStandardMaterial({ color: 0xb46b38, roughness: 0.55 });
+      const linenCreamMat = new THREE.MeshStandardMaterial({ color: 0xf5eedc, roughness: 0.8 });
+      const ceramicWhiteMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.2 });
+
+      switch(type) {
+        case 'wall_tv_unit':
+          const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.1, 0.08), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }));
+          tvFrame.position.set(0, 3.4, -4.75);
+          tvFrame.castShadow = true;
+          group.add(tvFrame);
+
+          const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.9, 0.02), new THREE.MeshBasicMaterial({ color: 0x222225 }));
+          tvScreen.position.set(0, 3.4, -4.7);
+          group.add(tvScreen);
+
+          const floatingShelf = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.38, 0.7), oakWoodMat);
+          floatingShelf.position.set(0, 1.9, -4.45);
+          floatingShelf.castShadow = true;
+          group.add(floatingShelf);
+          break;
+
+        case 'coffee_station':
+          const sideboard = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.15, 0.95), darkWoodMat);
+          sideboard.position.y = 0.575;
+          sideboard.castShadow = true;
+          group.add(sideboard);
+
+          for (let p = -0.8; p <= 0.8; p += 0.8) {
+            const door = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.0, 0.04), oakWoodMat);
+            door.position.set(p, 0.575, 0.48);
+            group.add(door);
+          }
+
+          const machineMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.9, roughness: 0.2 });
+          const espresso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.5), machineMat);
+          espresso.position.set(-0.5, 1.42, 0);
+          espresso.castShadow = true;
+          group.add(espresso);
+
+          const grinder = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.45, 16), machineMat);
+          grinder.position.set(0.3, 1.38, 0);
+          group.add(grinder);
+          break;
+
+        case 'tv_credenza':
+          const lowboard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.65, 0.75), darkWoodMat);
+          lowboard.position.y = 0.325;
+          lowboard.castShadow = true;
+          group.add(lowboard);
+          break;
+
+        case 'tan_armchair':
+          const chairBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.1), leatherTanMat.clone());
+          chairBase.position.y = 0.3;
+          chairBase.castShadow = true;
+          group.add(chairBase);
+
+          const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.85, 0.35), chairBase.material);
+          chairBack.position.set(0, 0.72, -0.4);
+          chairBack.castShadow = true;
+          group.add(chairBack);
+
+          const armL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.65, 1.1), chairBase.material);
+          armL.position.set(-0.52, 0.55, 0);
+          armL.castShadow = true;
+          const armR = armL.clone();
+          armR.position.x = 0.52;
+          group.add(armL);
+          group.add(armR);
+          break;
+
+        case 'japandi_sofa':
+          const sofaFrame = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.45, 1.25), leatherTanMat.clone());
+          sofaFrame.position.y = 0.35;
+          sofaFrame.castShadow = true;
+          group.add(sofaFrame);
+
+          const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.85, 0.35), sofaFrame.material);
+          sofaBack.position.set(0, 0.75, -0.45);
+          sofaBack.castShadow = true;
+          group.add(sofaBack);
+
+          const blanket = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.6, 1.3), linenCreamMat);
+          blanket.position.set(0.4, 0.55, 0.02);
+          blanket.castShadow = true;
+          group.add(blanket);
+          break;
+
+        case 'arch_desk':
+          const archTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.85), darkWoodMat);
+          archTop.position.y = 0.65;
+          archTop.castShadow = true;
+          group.add(archTop);
+
+          const legL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.65, 0.85), darkWoodMat);
+          legL.position.set(-0.75, 0.325, 0);
+          const legR = legL.clone();
+          legR.position.x = 0.75;
+          group.add(legL);
+          group.add(legR);
+
+          const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.45, 24), oakWoodMat);
+          stool.position.set(0, 0.225, 0.75);
+          stool.castShadow = true;
+          group.add(stool);
+          break;
+
+        case 'fiddle_leaf_large':
+          const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.9, 24), ceramicWhiteMat);
+          pot.position.y = 0.45;
+          pot.castShadow = true;
+          group.add(pot);
+
+          const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.8, 12), darkWoodMat);
+          stem.position.y = 1.35;
+          group.add(stem);
+
+          const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.35, side: THREE.DoubleSide });
+          for (let l = 0; l < 6; l++) {
+            const rot = (l * Math.PI * 2) / 3 + l * 0.2;
+            const leaf = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.4), leafMat);
+            leaf.position.set(Math.cos(rot) * 0.4, 1.2 + l * 0.18, Math.sin(rot) * 0.4);
+            leaf.rotation.y = rot;
+            leaf.rotation.x = 0.4;
+            leaf.castShadow = true;
+            group.add(leaf);
+          }
+          break;
+
+        case 'monstera_cluster':
+          for (let p = 0; p < 3; p++) {
+            const offX = (p === 0) ? -0.4 : (p === 1 ? 0.3 : 0.0);
+            const offZ = (p === 0) ? -0.2 : (p === 1 ? -0.3 : 0.35);
+            const pHeight = 0.5 + p * 0.2;
+
+            const mPot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 20), ceramicWhiteMat);
+            mPot.position.set(offX, pHeight, offZ);
+            mPot.castShadow = true;
+            group.add(mPot);
+
+            const clusterLeaf = new THREE.Mesh(
+              new THREE.DodecahedronGeometry(0.35 + p * 0.08, 1),
+              new THREE.MeshStandardMaterial({ color: 0x1e5e3a, roughness: 0.4 })
+            );
+            clusterLeaf.position.set(offX, pHeight + 0.35, offZ);
+            clusterLeaf.castShadow = true;
+            group.add(clusterLeaf);
+          }
+          break;
+
+        case 'pendant_lamp':
+          const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 2.8), new THREE.MeshBasicMaterial({ color: 0x222222 }));
+          cord.position.y = 4.2;
+          group.add(cord);
+
+          const shade = new THREE.Mesh(
+            new THREE.SphereGeometry(0.32, 24, 24, 0, Math.PI * 2, 0, Math.PI / 2),
+            new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.35 })
+          );
+          shade.rotation.x = Math.PI;
+          shade.position.y = 2.8;
+          shade.castShadow = true;
+          group.add(shade);
+
+          const pLight = new THREE.PointLight(0xffecd1, 1.8, 6);
+          pLight.position.set(0, 2.65, 0);
+          group.add(pLight);
+          break;
+
+        case 'outdoor_bench':
+          const benchSeat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 0.95), linenCreamMat);
+          benchSeat.position.y = 0.3;
+          benchSeat.castShadow = true;
+          group.add(benchSeat);
+
+          const benchBack = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 0.2), linenCreamMat);
+          benchBack.position.set(0, 0.6, -0.4);
+          benchBack.castShadow = true;
+          group.add(benchBack);
+          break;
+
+        case 'boucle_chair':
+          const boucleMat = new THREE.MeshStandardMaterial({ color: 0xfbf9f5, roughness: 0.85 });
+          const bSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.38, 32), boucleMat);
+          bSeat.position.y = 0.28;
+          bSeat.castShadow = true;
+          group.add(bSeat);
+
+          const bBack = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.22, 16, 32, Math.PI), boucleMat);
+          bBack.rotation.x = -Math.PI / 2;
+          bBack.rotation.z = Math.PI;
+          bBack.position.set(0, 0.68, 0.1);
+          bBack.castShadow = true;
+          group.add(bBack);
+          break;
+
+        case 'marble_coffee_table':
+          const marbleTopMat = new THREE.MeshStandardMaterial({
+            color: 0xf8f8fa,
+            map: generateMarbleTexture(),
+            roughness: 0.12,
+            metalness: 0.1
+          });
+          const mTop = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.08, 36), marbleTopMat);
+          mTop.position.y = 0.45;
+          mTop.castShadow = true;
+          group.add(mTop);
+
+          const mLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.41, 32), oakWoodMat);
+          mLeg.position.y = 0.205;
+          mLeg.castShadow = true;
+          group.add(mLeg);
+          break;
+
+        case 'open_bookshelf':
+          const shelfFrame = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.2, 0.6), oakWoodMat);
+          shelfFrame.position.y = 1.6;
+          shelfFrame.castShadow = true;
+          group.add(shelfFrame);
+          break;
+
+        case 'arc_floor_lamp':
+          const lampMat = new THREE.MeshStandardMaterial({ color: 0x1f2421, metalness: 0.85, roughness: 0.3 });
+          const baseDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 24), lampMat);
+          baseDisc.position.y = 0.03;
+          group.add(baseDisc);
+
+          const curveCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 3.2, 0),
+            new THREE.Vector3(0.6, 4.2, 0),
+            new THREE.Vector3(1.6, 3.8, 0)
+          ]);
+          const tubeGeo = new THREE.TubeGeometry(curveCurve, 24, 0.03, 12, false);
+          const tube = new THREE.Mesh(tubeGeo, lampMat);
+          tube.castShadow = true;
+          group.add(tube);
+          break;
+
+        case 'zz_plant_pot':
+          const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xba6a48, roughness: 0.85 });
+          const tPot = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.22, 0.65, 20), terracottaMat);
+          tPot.position.y = 0.325;
+          tPot.castShadow = true;
+          group.add(tPot);
+          break;
+      }
+
+      if (customPos) {
+        group.position.copy(customPos);
+      } else {
+        group.position.set((Math.random() - 0.5) * 4, 0, (Math.random() - 0.5) * 3);
+      }
+
+      if (customRot) {
+        group.rotation.y = customRot;
+      }
+
+      scene.add(group);
+      APP_STATE.furnitureList.push(group);
+      selectObject(group);
+      calculateAestheticScore();
+    }
+
+    function populateReferenceFurniture() {
+      clearAllFurniture(false);
+
+      // Tingkat Bawah
+      spawnFurniture('wall_tv_unit', new THREE.Vector3(1.4, 0, 0), 0);
+      spawnFurniture('tv_credenza', new THREE.Vector3(2.8, 0, -2.4), 0);
+      spawnFurniture('coffee_station', new THREE.Vector3(5.6, 0, -1.8), -Math.PI / 2);
+      spawnFurniture('arch_desk', new THREE.Vector3(2.6, 0, 1.6), 0);
+      spawnFurniture('japandi_sofa', new THREE.Vector3(-1.8, 0, 1.8), Math.PI);
+      spawnFurniture('tan_armchair', new THREE.Vector3(-1.4, 0, -0.6), 0.3);
+
+      const miniTable = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.42, 24), new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4 }));
+      miniTable.position.set(-0.8, 0.21, 0.8);
+      miniTable.name = "meja_kopi_oak";
+      miniTable.castShadow = true;
+      scene.add(miniTable);
+      APP_STATE.furnitureList.push(miniTable);
+
+      spawnFurniture('pendant_lamp', new THREE.Vector3(2.8, 0, -0.6), 0);
+      spawnFurniture('pendant_lamp', new THREE.Vector3(1.2, 0, 0.8), 0);
+      spawnFurniture('fiddle_leaf_large', new THREE.Vector3(0.5, 0, 1.5), 0);
+      spawnFurniture('monstera_cluster', new THREE.Vector3(-3.2, 0, -1.8), 0);
+
+      // Mezanin Atas
+      spawnFurniture('outdoor_bench', new THREE.Vector3(-1.6, 5.4, -4.1), 0);
+      spawnFurniture('tan_armchair', new THREE.Vector3(-5.2, 5.4, -1.6), Math.PI / 4);
+      spawnFurniture('monstera_cluster', new THREE.Vector3(-4.6, 5.4, -4.1), 0);
+      spawnFurniture('fiddle_leaf_large', new THREE.Vector3(-3.4, 5.4, -4.1), 0);
+    }
+
+    /* =========================================================
+       CAMERA VIEWS & DRAWER CONTROLS
+       ========================================================= */
+    function focusLevel(lvl) {
+      document.querySelectorAll('.theme-space-cluster .selector-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`btn-lvl-${lvl}`);
+      if (btn) btn.classList.add('active');
+
+      if (lvl === 'ground') {
+        camera.position.set(14, 8, 16);
+        controls.target.set(0, 1.8, 0);
+        showToast("Fokus: Tingkat Bawah");
+      } else if (lvl === 'mezzanine') {
+        camera.position.set(8, 15, 12);
+        controls.target.set(-2.6, 6.2, -1.8);
+        showToast("Fokus: Balkoni Atas");
+      } else {
+        resetIsometricView();
+        showToast("Paparan Penuh 2 Tingkat");
+      }
+      controls.update();
+    }
+
+    function resetIsometricView() {
+      camera.position.set(19, 17, 21);
+      controls.target.set(0, 3.2, 0);
+      controls.update();
+      showToast("🔄 Sudut pandangan di-reset!");
+    }
+
+    function toggleCatalogDrawer(forceState = null) {
+      const drawer = document.getElementById('catalog-drawer');
+      const isCurrentlyOpen = drawer.classList.contains('open');
+      const shouldOpen = (forceState !== null) ? forceState : !isCurrentlyOpen;
+
+      if (shouldOpen) {
+        drawer.classList.add('open');
+        document.getElementById('control-drawer').classList.remove('open');
+      } else {
+        drawer.classList.remove('open');
+      }
+    }
+
+    function toggleControlDrawer(forceState = null) {
+      const drawer = document.getElementById('control-drawer');
+      const isCurrentlyOpen = drawer.classList.contains('open');
+      const shouldOpen = (forceState !== null) ? forceState : !isCurrentlyOpen;
+
+      if (shouldOpen) {
+        drawer.classList.add('open');
+        document.getElementById('catalog-drawer').classList.remove('open');
+      } else {
+        drawer.classList.remove('open');
+      }
+    }
+
+    function toggleZenMode() {
+      APP_STATE.isZenMode = !APP_STATE.isZenMode;
+      document.body.classList.toggle('zen-mode', APP_STATE.isZenMode);
+
+      const zenBtn = document.getElementById('btn-zen');
+      const zenIcon = document.getElementById('zen-icon');
+      const zenText = document.getElementById('zen-text');
+
+      if (APP_STATE.isZenMode) {
+        toggleCatalogDrawer(false);
+        toggleControlDrawer(false);
+        zenBtn.style.background = '#18181b';
+        zenBtn.style.color = '#ffffff';
+        zenIcon.innerText = "✕";
+        zenText.innerText = "Keluar Zen";
+        showToast("✨ Mod Bersih Sinematik Aktif!");
+      } else {
+        zenBtn.style.background = '#ffffff';
+        zenBtn.style.color = 'var(--brand-brown)';
+        zenIcon.innerText = "👁️";
+        zenText.innerText = "Mod Bersih";
+        showToast("Menu UI dipaparkan semula.");
+      }
+    }
+
+    /* =========================================================
+       AUGMENTED REALITY (AR) CAMERA PASSTHROUGH
+       ========================================================= */
+    function buildARReticle() {
+      arReticleGroup = new THREE.Group();
+      arReticleGroup.visible = false;
+
+      const ringGeo = new THREE.RingGeometry(0.55, 0.65, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+      arReticleGroup.add(new THREE.Mesh(ringGeo, ringMat));
+
+      arFloorGrid = new THREE.GridHelper(12, 24, 0x22c55e, 0x86efac);
+      arFloorGrid.position.y = 0.01;
+      arFloorGrid.material.transparent = true;
+      arFloorGrid.material.opacity = 0.35;
+      arFloorGrid.visible = false;
+      scene.add(arFloorGrid);
+      scene.add(arReticleGroup);
+    }
+
+    async function toggleARMode() {
+      const btn = document.getElementById('btn-toggle-ar');
+      const badge = document.getElementById('ar-badge');
+      const videoEl = document.getElementById('ar-video-stream');
+      const materialStudio = document.getElementById('material-studio-bar');
+
+      if (!APP_STATE.isARActive) {
+        try {
+          const constraints = {
+            video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+            audio: false
+          };
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          APP_STATE.videoStream = stream;
+          videoEl.srcObject = stream;
+          videoEl.style.display = 'block';
+
+          scene.background = null;
+          renderer.setClearColor(0x000000, 0);
+
+          houseGroup.visible = false;
+          arReticleGroup.visible = true;
+          arFloorGrid.visible = true;
+
+          camera.position.set(0, 3, 5);
+          controls.target.set(0, 0, 0);
+          controls.update();
+
+          APP_STATE.isARActive = true;
+          badge.classList.add('active');
+          if (materialStudio) materialStudio.style.display = 'none';
+
+          btn.innerHTML = `❌ Keluar Mod AR`;
+          btn.style.background = '#ef4444';
+          showToast("🥽 Mod AR Aktif: Kamera Sebenar Terbuka!");
+        } catch (err) {
+          showToast("⚠️ Akses kamera tidak dibenarkan atau tidak disokong.");
+        }
+      } else {
+        if (APP_STATE.videoStream) {
+          APP_STATE.videoStream.getTracks().forEach(track => track.stop());
+          APP_STATE.videoStream = null;
+        }
+        videoEl.srcObject = null;
+        videoEl.style.display = 'none';
+
+        scene.background = new THREE.Color(0xf2ede4);
+        renderer.setClearColor(0xf2ede4, 1);
+        houseGroup.visible = true;
+        arReticleGroup.visible = false;
+        arFloorGrid.visible = false;
+
+        APP_STATE.isARActive = false;
+        badge.classList.remove('active');
+        if (materialStudio) materialStudio.style.display = 'flex';
+
+        btn.innerHTML = `🥽 Mod AR (Kamera Sebenar)`;
+        btn.style.background = '#10b981';
+        resetIsometricView();
+        showToast("Keluar dari Mod AR.");
+      }
+    }
+
+    /* =========================================================
+       TOUCH & MOUSE INTERACTION (RAYCASTING & SMART DRAG)
+       ========================================================= */
+    function setupEventListeners() {
+      const container = document.getElementById('webgl-container');
+      window.addEventListener('resize', onWindowResize);
+      container.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    function onPointerDown(event) {
+      if (event.button !== 0) return;
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects(APP_STATE.furnitureList, true);
+      if (intersects.length > 0) {
+        let rootObj = intersects[0].object;
+        while (rootObj.parent && !APP_STATE.furnitureList.includes(rootObj)) {
+          rootObj = rootObj.parent;
+        }
+        if (APP_STATE.furnitureList.includes(rootObj)) {
+          selectObject(rootObj);
+          isDragging = true;
+          controls.enabled = false;
+          dragPlane.constant = -rootObj.position.y;
+        }
+      } else {
+        deselectObject();
+      }
+    }
+
+    function onPointerMove(event) {
+      if (!isDragging || !APP_STATE.selectedObject) return;
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      if (raycaster.ray.intersectPlane(dragPlane, planeIntersector)) {
+        APP_STATE.selectedObject.position.x = planeIntersector.x;
+        APP_STATE.selectedObject.position.z = planeIntersector.z;
+      }
+    }
+
+    function onPointerUp() {
+      if (isDragging) {
+        isDragging = false;
+        controls.enabled = true;
+        calculateAestheticScore();
+      }
+    }
+
+    function selectObject(obj) {
+      deselectObject();
+      APP_STATE.selectedObject = obj;
+
+      obj.traverse((child) => {
+        if (child.isMesh && child.material && child.material.emissive) {
+          child.userData.oldEmissive = child.material.emissive.getHex();
+          child.material.emissive.setHex(0xa97142);
+          child.material.emissiveIntensity = 0.35;
+        }
+      });
+
+      const inspector = document.getElementById('inspector-bar');
+      document.getElementById('selected-item-title').innerText = `Edit: ${obj.name.replace(/_/g, ' ').toUpperCase()}`;
+      inspector.classList.add('show');
+    }
+
+    function deselectObject() {
+      if (APP_STATE.selectedObject) {
+        APP_STATE.selectedObject.traverse((child) => {
+          if (child.isMesh && child.material && child.material.emissive) {
+            child.material.emissive.setHex(child.userData.oldEmissive || 0);
+            child.material.emissiveIntensity = 0;
+          }
+        });
+      }
+      APP_STATE.selectedObject = null;
+      document.getElementById('inspector-bar').classList.remove('show');
+    }
+
+    function rotateSelectedObject() {
+      if (!APP_STATE.selectedObject) return;
+      APP_STATE.selectedObject.rotation.y += Math.PI / 4;
+      calculateAestheticScore();
+    }
+
+    function deleteSelectedObject() {
+      if (!APP_STATE.selectedObject) return;
+      const obj = APP_STATE.selectedObject;
+      scene.remove(obj);
+      APP_STATE.furnitureList = APP_STATE.furnitureList.filter(item => item !== obj);
+      deselectObject();
+      calculateAestheticScore();
+      showToast("Perabot dialihkan.");
+    }
+
+    function changeActiveColor(hexColor) {
+      if (!APP_STATE.selectedObject) return;
+      APP_STATE.selectedObject.traverse((child) => {
+        if (child.isMesh && child.material && child.material.color) {
+          if (child.material.transmission > 0 || child.material.metalness > 0.5) return;
+          child.material = child.material.clone();
+          child.material.color.setStyle(hexColor);
+        }
+      });
+      calculateAestheticScore();
+    }
+
+    function clearAllFurniture(showNotification = true) {
+      deselectObject();
+      APP_STATE.furnitureList.forEach(obj => scene.remove(obj));
+      APP_STATE.furnitureList = [];
+      calculateAestheticScore();
+      if(showNotification) showToast("Semua perabot telah dikosongkan.");
+    }
+
+    function toggleLighting(mode) {
+      APP_STATE.lightMode = mode;
+      if (mode === 'day') {
+        scene.background.setHex(0xf2ede4);
+        directionalLight.color.setHex(0xfffbf2);
+        directionalLight.intensity = 1.85;
+        ambientLight.intensity = 0.95;
+        showToast("Suasana: Pagi Hangat ☀️");
+      } else if (mode === 'sunset') {
+        scene.background.setHex(0xe8d2be);
+        directionalLight.color.setHex(0xfb923c);
+        directionalLight.intensity = 2.4;
+        ambientLight.intensity = 0.75;
+        showToast("Suasana: Petang Senja 🌇");
+      } else if (mode === 'night') {
+        scene.background.setHex(0x19161a);
+        directionalLight.color.setHex(0x93c5fd);
+        directionalLight.intensity = 0.45;
+        ambientLight.intensity = 0.35;
+        showToast("Suasana: Malam Romantik 🌙");
+      }
+    }
+
+    function calculateAestheticScore() {
+      const count = APP_STATE.furnitureList.length;
+      let score = 70 + Math.min(28, count * 3);
+      APP_STATE.score = score;
+
+      const scoreRing = document.getElementById('score-ring');
+      const scoreVal = document.getElementById('score-val');
+      const scoreTag = document.getElementById('score-tag');
+
+      if (scoreVal) scoreVal.innerText = score;
+      if (scoreRing) {
+        const offset = 94.2 - (score / 100) * 94.2;
+        scoreRing.style.strokeDashoffset = offset;
+      }
+
+      if (scoreTag) {
+        if(score >= 90) scoreTag.innerText = "Estetik & Cozy ✨";
+        else if(score >= 80) scoreTag.innerText = "Harmoni Japandi 🌿";
+        else scoreTag.innerText = "Tambah Perabot 🛋️";
+      }
+    }
+
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('active');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('active'), 2500);
+    }
+
+    function toggleHelpModal(open) {
+      const modal = document.getElementById('help-modal');
+      if (open) modal.classList.add('open');
+      else modal.classList.remove('open');
+    }
+
+    function onWindowResize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function animateLoop() {
+      requestAnimationFrame(animateLoop);
+      controls.update();
+
+      const time = Date.now() * 0.0018;
+      if (APP_STATE.isARActive && arReticleGroup.visible) {
+        const pulse = 1 + Math.sin(time * 3) * 0.08;
+        arReticleGroup.scale.set(pulse, 1, pulse);
+        arReticleGroup.rotation.y += 0.01;
+      }
+
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
